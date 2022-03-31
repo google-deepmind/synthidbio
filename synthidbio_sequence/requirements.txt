@@ -1,0 +1,13 @@
+# SynthID Bio-sequence Requirements
+# All dependencies needed for ProteinMPNN with SynthID watermarking
+
+# Core dependencies
+torch==2.4.0
+jax[cpu]==0.4.30
+numpy==2.0.2
+immutabledict==4.2.0
+tqdm==4.67.0
+
+# Testing dependencies
+pytest==8.4.0
+absl-py==2.3.0
