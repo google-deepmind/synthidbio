@@ -354,9 +354,9 @@ TODO
   - Copyright Google DeepMind
   - Watermarking technology for text and sequences
 
-### Modified and Added Files in ProteinMPNN
+### Modified, Added, and Removed Files in ProteinMPNN
 
-To integrate SynthID watermarking and ensure determinism, the following files in the `ProteinMPNN` directory were modified or added:
+To integrate SynthID watermarking and ensure determinism, the following files in the `ProteinMPNN` directory were modified, added, or removed:
 
 #### Modified Files
 *   **`ProteinMPNN/protein_mpnn_run.py`**:
@@ -383,6 +383,10 @@ To integrate SynthID watermarking and ensure determinism, the following files in
     *   Directory containing golden outputs and helper inputs used by the test suite to ensure determinism.
 *   **`ProteinMPNN/examples/*_watermark.sh`**:
     *   Example bash scripts (for examples 2, 3, 4, 5, 6, 8) demonstrating how to run ProteinMPNN with watermarking parameters.
+
+#### Removed Files & Directories
+*   **`ProteinMPNN/training/`**:
+    *   Removed training code, data, and local training weights, as they are not required for inference or validation.
 
 ### Licensing & Disclaimer
 Copyright 2025 Google LLC
