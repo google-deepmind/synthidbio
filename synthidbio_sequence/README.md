@@ -54,11 +54,11 @@ Follow these steps to set up the environment from scratch on a Linux system:
 
 ### Generate Normal (Non-Watermarked) Sequences
 ```bash
-cd ProteinMPNN/examples
+cd third_party/ProteinMPNN/examples
 bash submit_example_1.sh
 ```
 
-**Outputs stored in ProteinMPNN/outputs and includes g-values for detection**:
+**Outputs stored in third_party/ProteinMPNN/outputs and includes g-values for detection**:
 ```
 >T=0.1, sample=1, score=0.8581, global_score=0.8581, seq_recovery=0.4151, mean_g_value=0.5255
 SIDEDTQKALDFVKALEEANPELMKKVITPDTEMEVNGKKYKGEEIVEFVKELAAKGVK...
@@ -78,7 +78,7 @@ can see the effect of the watermarking on detection.
 For stronger watermark signal, best for low temperature generation (0.1). Uses repeated keys.
 
 ```bash
-cd ProteinMPNN
+cd third_party/ProteinMPNN
 python protein_mpnn_run.py \
     --jsonl_path outputs/example_1_outputs/parsed_pdbs.jsonl \
     --out_folder outputs/example_1_outputs \
@@ -105,7 +105,7 @@ g-values, you can run the following command (the key part is removing
 correctly on unwatermarked sequences.):
 
 ```bash
-cd ProteinMPNN
+cd third_party/ProteinMPNN
 python protein_mpnn_run.py \
     --jsonl_path outputs/example_1_outputs/parsed_pdbs.jsonl \
     --out_folder outputs/example_1_outputs \
@@ -123,7 +123,7 @@ Minimal impact on sequence quality. Uses non-repeated keys and higher
 temperature.
 
 ```bash
-cd ProteinMPNN
+cd third_party/ProteinMPNN
 python protein_mpnn_run.py \
     --jsonl_path outputs/example_1_outputs/parsed_pdbs.jsonl \
     --out_folder outputs/example_1_outputs \
@@ -151,7 +151,7 @@ removing --watermark but keeping the same watermark args so g-values are
 computed correctly on unwatermarked sequences.):
 
 ```bash
-cd ProteinMPNN
+cd third_party/ProteinMPNN
 python protein_mpnn_run.py \
     --jsonl_path outputs/example_1_outputs/parsed_pdbs.jsonl \
     --out_folder outputs/example_1_outputs \
@@ -169,7 +169,7 @@ For existing FASTA files, use the standalone `compute_g_values.py` script to
 compute g-values without regenerating sequences:
 
 ```bash
-cd ProteinMPNN
+cd third_party/ProteinMPNN
 python compute_g_values.py \
     --input_fasta test_data/test_sequences.fa \
     --output_fasta outputs/sequences_with_gvalues.fa \
@@ -294,10 +294,10 @@ watermarking works correctly.
 
 ### Running Tests
 
-To run the tests, navigate to the `ProteinMPNN` directory and use `pytest`:
+To run the tests, navigate to the `third_party/ProteinMPNN` directory and use `pytest`:
 
 ```bash
-cd ProteinMPNN
+cd third_party/ProteinMPNN
 
 # Run all tests
 pytest -v
@@ -346,7 +346,7 @@ TODO
 
 ### Contained Code
 
-- **ProteinMPNN** (`ProteinMPNN/`): [MIT License](ProteinMPNN/LICENSE)
+- **ProteinMPNN** (`third_party/ProteinMPNN/`): [MIT License](third_party/ProteinMPNN/LICENSE)
   - Copyright (c) 2022 Justas Dauparas
   - Original publication: Dauparas et al., "Robust deep learning-based protein sequence design using ProteinMPNN" (2022)
 
@@ -354,38 +354,38 @@ TODO
   - Copyright Google DeepMind
   - Watermarking technology for text and sequences
 
-### Modified, Added, and Removed Files in ProteinMPNN
+### Modified, Added, and Removed Files in third_party/ProteinMPNN
 
-To integrate SynthID watermarking and ensure determinism, the following files in the `ProteinMPNN` directory were modified, added, or removed:
+To integrate SynthID watermarking and ensure determinism, the following files in the `third_party/ProteinMPNN` directory were modified, added, or removed:
 
 #### Modified Files
-*   **`ProteinMPNN/protein_mpnn_run.py`**:
+*   **`third_party/ProteinMPNN/protein_mpnn_run.py`**:
     *   Added command-line arguments to configure SynthID watermarking (e.g., `--watermark`, `--ngram_len`, `--watermark_keys`, `--num_leaves`).
     *   Imports `SynthIDLogitsProcessor` and `mean_score` from `synthid_text`.
     *   Initializes the `SynthIDLogitsProcessor` and passes it to the model's `sample` function.
     *   Enforces `batch_size=1` when watermarking is active.
     *   Computes g-values for all generated sequences and appends the `mean_g_value` to the output FASTA headers.
-*   **`ProteinMPNN/protein_mpnn_utils.py`**:
+*   **`third_party/ProteinMPNN/protein_mpnn_utils.py`**:
     *   Modified the `sample` method of `ProteinMPNN` class to accept `watermark_processor`.
     *   Forces left-to-right sequential decoding when `watermark_processor` is present, overriding the default random decoding order.
     *   Enforces `batch_size=1` check inside `sample` when `watermark_processor` is present.
     *   Intercepts logits at each step of the decoding loop and applies `watermark_processor.watermarked_call` to compute watermarked scores before sampling.
     *   Modified `tied_sample` signature to accept `watermark_processor` for compatibility.
-*   **`ProteinMPNN/helper_scripts/parse_multiple_chains.py`**:
+*   **`third_party/ProteinMPNN/helper_scripts/parse_multiple_chains.py`**:
     *   Sorted the output of `glob.glob` to ensure deterministic parsing order of PDB files for testing.
 
 #### Added Files
-*   **`ProteinMPNN/compute_g_values.py`**:
+*   **`third_party/ProteinMPNN/compute_g_values.py`**:
     *   Standalone script to compute g-values for existing sequences in FASTA format, using `SynthIDLogitsProcessor` for detection.
-*   **`ProteinMPNN/test_*.py`**:
+*   **`third_party/ProteinMPNN/test_*.py`**:
     *   Pytest suite (10 files) for validating various ProteinMPNN examples with and without watermarking, ensuring exact score and g-value matches.
-*   **`ProteinMPNN/test_data/`**:
+*   **`third_party/ProteinMPNN/test_data/`**:
     *   Directory containing golden outputs and helper inputs used by the test suite to ensure determinism.
-*   **`ProteinMPNN/examples/*_watermark.sh`**:
+*   **`third_party/ProteinMPNN/examples/*_watermark.sh`**:
     *   Example bash scripts (for examples 2, 3, 4, 5, 6, 8) demonstrating how to run ProteinMPNN with watermarking parameters.
 
 #### Removed Files & Directories
-*   **`ProteinMPNN/training/`**:
+*   **`third_party/ProteinMPNN/training/`**:
     *   Removed training code, data, and local training weights, as they are not required for inference or validation.
 
 ### Licensing & Disclaimer

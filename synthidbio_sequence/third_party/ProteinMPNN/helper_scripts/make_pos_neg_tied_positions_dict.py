@@ -1,3 +1,24 @@
+# Original code licensed under MIT License.
+# Copyright (c) 2022 Justas Dauparas
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 import argparse
 
 def main(args):
@@ -28,17 +49,27 @@ def main(args):
                 tied_positions_list.append(temp_dict)
             my_dict[result['name']] = tied_positions_list
     else:
+        if args.pos_neg_chain_list:
+            chain_list_input = [[str(item) for item in one.split()] for one in args.pos_neg_chain_list.split(",")]
+            chain_betas_input = [[float(item) for item in one.split()] for one in args.pos_neg_chain_betas.split(",")]
+            chain_list_flat = [item for sublist in chain_list_input for item in sublist]
+            chain_betas_flat = [item for sublist in chain_betas_input for item in sublist]
+            chain_betas_dict = dict(zip(chain_list_flat, chain_betas_flat))
         my_dict = {}
         for json_str in json_list:
             result = json.loads(json_str)
             all_chain_list = sorted([item[-1:] for item in list(result) if item[:9]=='seq_chain']) #A, B, C, ...
             tied_positions_list = []
             chain_length = len(result[f"seq_chain_{all_chain_list[0]}"])
-            for i in range(1,chain_length+1):
-                temp_dict = {}
-                for j, chain in enumerate(all_chain_list):
-                    temp_dict[chain] = [i] #needs to be a list
-                tied_positions_list.append(temp_dict)
+            for chains in chain_list_input:
+                for i in range(1,chain_length+1):
+                    temp_dict = {}
+                    for j, chain in enumerate(chains):
+                        if args.pos_neg_chain_list and chain in chain_list_flat:
+                            temp_dict[chain] = [[i], [chain_betas_dict[chain]]]
+                        else: 
+                            temp_dict[chain] = [[i], [1.0]] #first list is for residue numbers, second list is for weights for the energy, +ive and -ive design
+                    tied_positions_list.append(temp_dict)
             my_dict[result['name']] = tied_positions_list
  
     with open(args.output_path, 'w') as f:
@@ -51,6 +82,8 @@ if __name__ == "__main__":
     argparser.add_argument("--chain_list", type=str, default='', help="List of the chains that need to be fixed")
     argparser.add_argument("--position_list", type=str, default='', help="Position lists, e.g. 11 12 14 18, 1 2 3 4 for first chain and the second chain")
     argparser.add_argument("--homooligomer", type=int, default=0, help="If 0 do not use, if 1 then design homooligomer")
+    argparser.add_argument("--pos_neg_chain_list", type=str, default='', help="Chain lists to be tied together")
+    argparser.add_argument("--pos_neg_chain_betas", type=str, default='', help="Chain beta list for the chain lists provided; 1.0 for the positive design, -0.1 or -0.5 for negative, 0.0 means do not use that chain info")
 
     args = argparser.parse_args()
     main(args)
