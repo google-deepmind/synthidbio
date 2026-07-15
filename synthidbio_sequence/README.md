@@ -2,7 +2,7 @@
 
 This repository contains code for SynthIDBio-sequence, accompanying the paper **"Function-preserving
 biological watermarking of AI-generated protein sequences and structures"**
-(SynthIDBio). For more details, please refer to our paper. 
+(SynthIDBio). For more details, please refer to our paper.
 
 > [!NOTE]
 > **Drop-in Integration:** This watermarked version of ProteinMPNN is designed to be a drop-in replacement for existing protein design pipelines. With minimal installation overhead, it can be integrated into your current workflows, enabling the generation of watermarked protein sequences by simply enabling the watermarking flags.
@@ -89,7 +89,6 @@ python protein_mpnn_run.py \
     --watermark \
     --ngram_len 4 \
     --watermark_keys 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 \
-    --num_leaves 25
 ```
 
 **Output includes high g-values (>>0.5):**
@@ -116,7 +115,6 @@ python protein_mpnn_run.py \
     --batch_size 1 \
     --ngram_len 4 \
     --watermark_keys 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 \
-    --num_leaves 25
 ```
 
 #### Example 3: Non-Distortionary Watermarking (Temperature 0.5)
@@ -136,7 +134,6 @@ python protein_mpnn_run.py \
     --watermark \
     --ngram_len 4 \
     --watermark_keys 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24 \
-    --num_leaves 25
 ```
 
 **Output with moderate g-values:**
@@ -164,7 +161,6 @@ python protein_mpnn_run.py \
     --batch_size 1 \
     --ngram_len 4 \
     --watermark_keys 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24 \
-    --num_leaves 25
 ```
 
 ## Standalone G-Value Calculator
@@ -178,7 +174,6 @@ python compute_g_values.py \
     --input_fasta test_data/test_sequences.fa \
     --output_fasta outputs/sequences_with_gvalues.fa \
     --ngram_len 4 \
-    --num_leaves 25 \
     --watermark_keys 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 ```
 
@@ -198,22 +193,21 @@ KMYEYKKIGDEYVVAIYNESEMMTALTTFCKDKNIKSGTITGIGQIKEITLKYFNPETKE...
 KLYEYKKIGDEYVVNIYDNTEIVKSILEFCEEKNILSGTIQGIGQIKEIELQFFDPETKE...
 ```
 
-**Important**: Use the same watermark parameters (ngram_len, num_leaves,
-watermark_keys) that were used during sequence generation for accurate
-detection.
+**Important**: Use the same watermark parameters (e.g., `--ngram_len`,
+`--watermark_keys`) as those used during sequence generation for detection.
 
 ## Watermarking Parameters
 
 | Parameter | Description | Default | Notes |
 |-----------|-------------|---------|-------|
-| `--watermark` | Enable watermarking | False | Must be set to embed watermarks |
-| `--ngram_len` | N-gram length | 5 | Higher = stronger watermark (e.g., 25) |
-| `--watermark_keys` | Comma-separated keys | 0,1,2,3,4 | Length must match ngram_len |
+| `--watermark` | Enable watermarking | True | Must be set to embed watermarks |
+| `--ngram_len` | N-gram length | 4 | Higher = stronger watermark (e.g., 25) |
+| `--watermark_keys` | Comma-separated keys | 0,1,2,3,4,...,24 | Length must match ngram_len |
 | `--context_history_size` | Context size | 1024 | SynthID internal parameter |
 | `--watermark_temperature` | Watermark temp | 1.0 | Controls watermark strength |
 | `--watermark_top_k` | Top-k value | 21 | Set to vocab size (21 amino acids) |
-| `--skip_first_ngram_calls` | Skip first tokens | False | SynthID internal parameter |
-| `--num_leaves` | Tournament leaves | 25 | SynthID internal parameter |
+| `--skip_first_ngram_calls` | Skip first tokens | True | SynthID internal parameter |
+| `--num_leaves` | Tournament leaves | 2 | SynthID internal parameter |
 
 
 ## Applying SynthIDBio-sequence to Other Decoders
@@ -245,8 +239,10 @@ import torch
 
 # 1. Initialize the processor
 watermark_processor = SynthIDLogitsProcessor(
-    ngram_len=5,
-    keys=[0, 1, 2, 3, 4],  # Watermark keys (one per depth)
+    ngram_len=4,
+    # Watermark keys (one per depth)
+    keys=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+          19, 20, 21, 22, 23, 24],
     context_history_size=1024,
     temperature=1.0,
     top_k=21,  # Vocabulary size (e.g., 20 amino acids + X)
