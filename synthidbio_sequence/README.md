@@ -63,7 +63,6 @@ bash submit_example_1.sh
 >T=0.1, sample=1, score=0.8581, global_score=0.8581, seq_recovery=0.4151, mean_g_value=0.5255
 SIDEDTQKALDFVKALEEANPELMKKVITPDTEMEVNGKKYKGEEIVEFVKELAAKGVK...
 ```
-*Note: g-value ≈ 0.5 indicates no watermark*
 
 ### Generate Watermarked Sequences
 
@@ -212,7 +211,7 @@ KLYEYKKIGDEYVVNIYDNTEIVKSILEFCEEKNILSGTIQGIGQIKEIELQFFDPETKE...
 
 ## Applying SynthIDBio-sequence to Other Decoders
 
-SynthIDBio-sequence is designed to be model-agnostic and can be integrated into other autoregressive protein sequence decoders (e.g., ESM-IF1, local designs) with minimal changes.
+SynthIDBio-sequence is designed to be model-agnostic and can be integrated into other autoregressive protein sequence decoders with minimal changes.
 
 ### Integration Steps
 
@@ -222,7 +221,7 @@ To apply watermarking to a custom protein decoder, follow these steps:
    * For protein sequences, it is recommended to set `apply_top_k=False` to maintain the full amino acid alphabet, and set `top_k` to the vocabulary size (typically 21 for standard amino acids + mask token).
    * Ensure the `device` matches the model's device.
 
-2. **Enforce Sequential Decoding**: SynthID requires sequential (left-to-right) decoding because the watermark at position $t$ depends on the history of generated residues from $0$ to $t-1$. If your model uses random decoding order (like vanilla ProteinMPNN), you must force it to decode sequentially when watermarking is enabled.
+2. **Enforce Sequential Decoding**: SynthIDBio-sequence requires sequential (left-to-right) decoding because the watermark at position $t$ depends on the history of generated residues from $0$ to $t-1$. If your model uses random decoding order (like vanilla ProteinMPNN), you must force it to decode sequentially when watermarking is enabled.
 
 3. **Intercept logits in the sampling loop**:
    * At each step $t$, before sampling, construct the context of already-sampled tokens (IDs) up to $t-1$.
@@ -283,10 +282,10 @@ watermarking works correctly.
 
 ### Test Suite Overview
 
-*   **`test_example_1.py`**: Verifies backward compatibility with standard
+*   **`test_example_*.py`**: Verifies backward compatibility with standard
     ProteinMPNN (ensures deterministic non-watermarked generation matches
     golden outputs).
-*   **`test_example_1_watermark.py`**: Tests end-to-end watermarked
+*   **`test_example_*_watermark.py`**: Tests end-to-end watermarked
     generation, validating sequences, scores, recovery rates, and exact
     g-values.
 *   **`test_g_values.py`**: Tests g-value detection accuracy for both
