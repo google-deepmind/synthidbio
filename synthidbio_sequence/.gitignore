@@ -1,7 +1,16 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
+**/__pycache__/
 *.py[cod]
 *$py.class
+*.pyc
+*.pyo
+
+# Pytest / Test caches
+.pytest_cache/
+**/.pytest_cache/
+.coverage
+htmlcov/
 
 # Distribution / packaging
 .Python
@@ -22,6 +31,22 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+*.so
 
-# Fig specific
+# Environments
+venv/
+.venv/
+synthid_bio/
+.python-version
+
+# PDF & build artifacts
+*.pdf
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*~
+
+# Fig / Mercurial
 .hgignore
