@@ -10,8 +10,8 @@ For more details, please refer to our paper: **"Function-preserving watermarking
 
 SynthIDBio provides watermarking for autoregressive inverse folding models (such as ProteinMPNN) and structure prediction models (such as AlphaFold 3):
 
-- **[SynthIDBio-structure](#synthidbio-structure)**: Fine-tuned AlphaFold 3 model that embeds imperceptible watermarks into generated 3D biomolecular structures.
-- **[SynthIDBio-sequence](#synthidbio-sequence)**: Watermarking protein sequences during autoregressive decoding with ProteinMPNN while preserving function and expressivity.
+- [**SynthIDBio-structure**](#synthidbio-structure): Fine-tuned AlphaFold 3 model that embeds imperceptible watermarks into generated 3D biomolecular structures.
+- [**SynthIDBio-sequence**](#synthidbio-sequence): Watermarking protein sequences during autoregressive decoding with ProteinMPNN while preserving function and expressivity.
 
 ---
 
