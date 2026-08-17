@@ -1,6 +1,6 @@
-# SynthIDBio: Biological Sequence and Structure Watermarking
+# SynthID Bio: Biological Sequence and Structure Watermarking
 
-SynthIDBio is a family of methods developed by Google DeepMind for embedding highly detectable yet function-preserving watermarks directly into AI-generated biological sequences and structures.
+SynthID Bio is a family of methods developed by Google DeepMind for embedding highly detectable yet function-preserving watermarks directly into AI-generated biological sequences and structures.
 
 For more details, please refer to our paper: **"Function-preserving watermarking of AI-generated proteins"**.
 
@@ -8,24 +8,24 @@ For more details, please refer to our paper: **"Function-preserving watermarking
 
 ## Overview
 
-SynthIDBio provides watermarking for autoregressive inverse folding models (such as ProteinMPNN) and structure prediction models (such as AlphaFold 3):
+SynthID Bio provides watermarking for autoregressive inverse folding models (such as ProteinMPNN) and structure prediction models (such as AlphaFold 3):
 
-- [**SynthIDBio-structure**](#synthidbio-structure): Fine-tuned AlphaFold 3 model that embeds imperceptible watermarks into generated 3D biomolecular structures.
-- [**SynthIDBio-sequence**](#synthidbio-sequence): Watermarking protein sequences during autoregressive decoding with ProteinMPNN while preserving function and expressivity.
+- [**SynthID Bio-structure**](#synthidbio-structure): Fine-tuned AlphaFold 3 model that embeds imperceptible watermarks into generated 3D biomolecular structures.
+- [**SynthID Bio-sequence**](#synthidbio-sequence): Watermarking protein sequences during autoregressive decoding with ProteinMPNN while preserving function and expressivity.
 
 ---
 
-## SynthIDBio-Structure
+## SynthID Bio-Structure
 
-`SynthIDBio-structure` is a fine-tuned AlphaFold 3 (AF3) model that embeds an imperceptible watermark into biomolecular structures during sampling.
+`SynthID Bio-structure` is a fine-tuned AlphaFold 3 (AF3) model that embeds an imperceptible watermark into biomolecular structures during sampling.
 
 For full instructions on downloading model weights and running watermarked structure predictions with AlphaFold 3, please refer to the [AlphaFold 3 Repository](https://github.com/google-deepmind/alphafold3).
 
 ---
 
-## SynthIDBio-Sequence
+## SynthID Bio-Sequence
 
-`SynthIDBio-sequence` introduces watermarked sampling into ProteinMPNN.
+`SynthID Bio-sequence` introduces watermarked sampling into ProteinMPNN.
 
 > [!NOTE]
 > **Drop-in Integration:** This watermarked version of ProteinMPNN is designed to be a drop-in replacement for existing protein design pipelines. With minimal installation overhead, it can be integrated into your current workflows, enabling the generation of watermarked protein sequences by simply enabling the watermarking flags.
@@ -61,7 +61,7 @@ Follow these steps to set up the environment from scratch on a Linux system:
 3. **Install SynthID Text package**:
    ```bash
    cd third_party/synthid-text
-   pip install -e .
+   uv pip install -e .
    ```
 
 ### Quick Start
@@ -221,9 +221,9 @@ KLYEYKKIGDEYVVNIYDNTEIVKSILEFCEEKNILSGTIQGIGQIKEIELQFFDPETKE...
 | `--skip_first_ngram_calls` | Skip first tokens | True | SynthID internal parameter |
 | `--num_leaves` | Tournament leaves | 2 | SynthID internal parameter |
 
-### Applying SynthIDBio-sequence to Other Decoders
+### Applying SynthID Bio-sequence to Other Decoders
 
-SynthIDBio-sequence is designed to be model-agnostic and can be integrated into other autoregressive protein sequence decoders with minimal changes.
+SynthID Bio-sequence is designed to be model-agnostic and can be integrated into other autoregressive protein sequence decoders with minimal changes.
 
 #### Integration Steps
 
@@ -233,7 +233,7 @@ To apply watermarking to a custom protein decoder, follow these steps:
    * For protein sequences, it is recommended to set `apply_top_k=False` to maintain the full amino acid alphabet, and set `top_k` to the vocabulary size (typically 21 for standard amino acids + mask token).
    * Ensure the `device` matches the model's device.
 
-2. **Enforce Sequential Decoding**: SynthIDBio-sequence requires sequential (left-to-right) decoding because the watermark at position *t* depends on the history of generated residues from *0* to *t* - 1. If your model uses random decoding order (like vanilla ProteinMPNN), you must force it to decode sequentially when watermarking is enabled.
+2. **Enforce Sequential Decoding**: SynthID Bio-sequence requires sequential (left-to-right) decoding because the watermark at position *t* depends on the history of generated residues from *0* to *t* - 1. If your model uses random decoding order (like vanilla ProteinMPNN), you must force it to decode sequentially when watermarking is enabled.
 
 3. **Intercept logits in the sampling loop**:
    * At each step *t*, before sampling, construct the context of already-sampled tokens (IDs) up to *t* - 1.
@@ -242,7 +242,7 @@ To apply watermarking to a custom protein decoder, follow these steps:
 
 #### Code Example
 
-Here is a conceptual example of integrating SynthIDBio-sequence into a generic autoregressive decoding loop:
+Here is a conceptual example of integrating SynthID Bio-sequence into a generic autoregressive decoding loop:
 
 ```python
 from synthid_text.logits_processing import SynthIDLogitsProcessor
@@ -398,11 +398,11 @@ To integrate SynthID watermarking and ensure determinism, the following files in
 
 ## Citing this work
 
-If you use SynthIDBio in your research, please cite:
+If you use SynthID Bio in your research, please cite:
 
 ```bibtex
 @article{synthidbio2026,
-  title={Function-preserving biological watermarking of AI-generated proteins},
+  title={Function-preserving watermarking of AI-generated proteins},
   author={David Stutz and Alexander I. Cowen-Rivers and Guillermo Ortiz-Jimenez and Jeremy Ratcliff and Vinicius Zambaldi and Lindsay Willmore and Josh Abramson and Harshnira Patani and Christina Kouridi and Florian Stimberg and Mel Vecerik and Alex Chu and Sukhdeep Singh and Sumanth Dathathri and Eliseo Papa and Valentin De Bortoli and Arnaud Doucet and Demis Hassabis and Jue Wang and Sven Gowal and Pushmeet Kohli},
   journal={Nature},
   volume={?},
