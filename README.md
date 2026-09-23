@@ -1,27 +1,33 @@
 # SynthID Bio: Biological Sequence and Structure Watermarking
 
-SynthID Bio is a family of methods developed by Google DeepMind for embedding highly detectable yet function-preserving watermarks directly into AI-generated biological sequences and structures.
+SynthID Bio is a family of methods developed by Google DeepMind for embedding
+highly detectable yet function-preserving watermarks directly into AI-generated
+biological sequences and structures.
 
 For more details, please refer to our paper: **"Function-preserving watermarking of AI-generated proteins"**.
 
----
-
 ## Overview
 
-SynthID Bio provides watermarking for autoregressive inverse folding models (such as ProteinMPNN) and structure prediction models (such as AlphaFold 3):
+SynthID Bio provides watermarking for autoregressive inverse folding models
+(such as ProteinMPNN) and structure prediction models (such as AlphaFold 3):
 
-- [**SynthID Bio-structure**](#synthidbio-structure): Fine-tuned AlphaFold 3 model that embeds imperceptible watermarks into generated 3D biomolecular structures.
-- [**SynthID Bio-sequence**](#synthidbio-sequence): Watermarking protein sequences during autoregressive decoding with ProteinMPNN while preserving function and expressivity.
+-   [**SynthID Bio-structure**](#synthidbio-structure): Fine-tuned AlphaFold 3
+    model that embeds imperceptible watermarks into generated 3D biomolecular
+    structures.
+-   [**SynthID Bio-sequence**](#synthidbio-sequence): Watermarking protein
+    sequences during autoregressive decoding with ProteinMPNN while preserving
+    function and expressivity.
 
----
+
 
 ## SynthID Bio-Structure
 
-`SynthID Bio-structure` is a fine-tuned AlphaFold 3 (AF3) model that embeds an imperceptible watermark into biomolecular structures during sampling.
+`SynthID Bio-structure` is a fine-tuned AlphaFold 3 (AF3) model that embeds an
+imperceptible watermark into biomolecular structures during sampling.
 
 For full instructions on downloading model weights and running watermarked structure predictions with AlphaFold 3, please refer to the [AlphaFold 3 Repository](https://github.com/google-deepmind/alphafold3).
 
----
+
 
 ## SynthID Bio-Sequence
 
@@ -45,6 +51,7 @@ We recommend using [`uv`](https://github.com/astral-sh/uv) or standard Python vi
 Follow these steps to set up the environment from scratch on a Linux system:
 
 1. **Create and activate a virtual environment**:
+
    ```bash
    uv venv synthid_bio --python 3.9
    source synthid_bio/bin/activate
@@ -52,6 +59,7 @@ Follow these steps to set up the environment from scratch on a Linux system:
    *(Or using standard `venv`: `python3.9 -m venv synthid_bio && source synthid_bio/bin/activate`)*
 
 2. **Install dependencies**:
+
    ```bash
    cd synthidbio_sequence
    uv pip install -r requirements.txt
@@ -59,20 +67,23 @@ Follow these steps to set up the environment from scratch on a Linux system:
    *(Or using `pip`: `pip install -r requirements.txt`)*
 
 3. **Install SynthID Text package**:
-   ```bash
-   cd third_party/synthid-text
-   uv pip install -e .
-   ```
+
+    ```bash
+    cd third_party/synthid-text
+    uv pip install -e .
+    ```
 
 ### Quick Start
 
 #### Generate Normal (Non-Watermarked) Sequences
+
 ```bash
 cd synthidbio_sequence/third_party/ProteinMPNN/examples
 bash submit_example_1.sh
 ```
 
 **Outputs stored in `synthidbio_sequence/third_party/ProteinMPNN/outputs` and includes g-values for detection**:
+
 ```
 >T=0.1, sample=1, score=0.8581, global_score=0.8581, seq_recovery=0.4151, mean_g_value=0.5255
 SIDEDTQKALDFVKALEEANPELMKKVITPDTEMEVNGKKYKGEEIVEFVKELAAKGVK...
@@ -223,7 +234,8 @@ KLYEYKKIGDEYVVNIYDNTEIVKSILEFCEEKNILSGTIQGIGQIKEIELQFFDPETKE...
 
 ### Applying SynthID Bio-sequence to Other Decoders
 
-SynthID Bio-sequence is designed to be model-agnostic and can be integrated into other autoregressive protein sequence decoders with minimal changes.
+SynthID Bio-sequence is designed to be model-agnostic and can be integrated into
+other autoregressive protein sequence decoders with minimal changes.
 
 #### Integration Steps
 
@@ -233,7 +245,11 @@ To apply watermarking to a custom protein decoder, follow these steps:
    * For protein sequences, it is recommended to set `apply_top_k=False` to maintain the full amino acid alphabet, and set `top_k` to the vocabulary size (typically 21 for standard amino acids + mask token).
    * Ensure the `device` matches the model's device.
 
-2. **Enforce Sequential Decoding**: SynthID Bio-sequence requires sequential (left-to-right) decoding because the watermark at position *t* depends on the history of generated residues from *0* to *t* - 1. If your model uses random decoding order (like vanilla ProteinMPNN), you must force it to decode sequentially when watermarking is enabled.
+2.  **Enforce Sequential Decoding**: SynthID Bio-sequence requires sequential
+    (left-to-right) decoding because the watermark at position *t* depends on
+    the history of generated residues from *0* to *t* - 1. If your model uses
+    random decoding order (like vanilla ProteinMPNN), you must force it to
+    decode sequentially when watermarking is enabled.
 
 3. **Intercept logits in the sampling loop**:
    * At each step *t*, before sampling, construct the context of already-sampled tokens (IDs) up to *t* - 1.
@@ -242,7 +258,8 @@ To apply watermarking to a custom protein decoder, follow these steps:
 
 #### Code Example
 
-Here is a conceptual example of integrating SynthID Bio-sequence into a generic autoregressive decoding loop:
+Here is a conceptual example of integrating SynthID Bio-sequence into a generic
+autoregressive decoding loop:
 
 ```python
 from synthid_text.logits_processing import SynthIDLogitsProcessor
@@ -365,6 +382,7 @@ test_g_values.py::test_g_values_watermarked PASSED        [100%]
 To integrate SynthID watermarking and ensure determinism, the following files in the `synthidbio_sequence/third_party/ProteinMPNN` directory were modified, added, or removed:
 
 #### Modified Files
+
 *   **`synthidbio_sequence/third_party/ProteinMPNN/protein_mpnn_run.py`**:
     *   Added command-line arguments to configure SynthID watermarking (e.g., `--watermark`, `--ngram_len`, `--watermark_keys`, `--num_leaves`).
     *   Imports `SynthIDLogitsProcessor` and `mean_score` from `synthid_text`.
@@ -381,6 +399,7 @@ To integrate SynthID watermarking and ensure determinism, the following files in
     *   Sorted the output of `glob.glob` to ensure deterministic parsing order of PDB files for testing.
 
 #### Added Files
+
 *   **`synthidbio_sequence/third_party/ProteinMPNN/compute_g_values.py`**:
     *   Standalone script to compute g-values for existing sequences in FASTA format, using `SynthIDLogitsProcessor` for detection.
 *   **`synthidbio_sequence/third_party/ProteinMPNN/test_*.py`**:
@@ -391,10 +410,11 @@ To integrate SynthID watermarking and ensure determinism, the following files in
     *   Example bash scripts (for examples 2, 3, 4, 5, 6, 8) demonstrating how to run ProteinMPNN with watermarking parameters.
 
 #### Removed Files & Directories
+
 *   **`synthidbio_sequence/third_party/ProteinMPNN/training/`**:
     *   Removed training code, data, and local training weights, as they are not required for inference or validation.
 
----
+
 
 ## Citing this work
 
@@ -413,8 +433,27 @@ If you use SynthID Bio in your research, please cite:
 }
 ```
 
----
+## Contact
 
-## License & Disclaimer
+For questions surrounding SynthID Bio, please contact
+[synthidbio@google.com](mailto:synthidbio@google.com).
 
-This is not an officially supported Google product.
+
+## Licensing & Disclaimer
+
+Copyright 2026 Google LLC
+All software is licensed under the Apache License, Version 2.0 (Apache 2.0); you may not use this file except in compliance with the Apache 2.0 license. You may obtain a copy of the Apache 2.0 license at: https://www.apache.org/licenses/LICENSE-2.0
+
+The AlphaFold 3 model parameters are made available under the AlphaFold 3 Model Parameters Terms of Use (the "Terms"); you may not use these except in compliance with the Terms. You may obtain a copy of the Terms at https://github.com/google-deepmind/alphafold3/blob/main/WEIGHTS_TERMS_OF_USE.md and in the file WEIGHTS_TERM_USE.
+
+Data in the synthidbio_squence/data directory is licensed under the Creative Commons Attribution 4.0 International License (CC-BY). You may obtain a copy of the CC-BY license at: https://creativecommons.org/licenses/by/4.0/legalcode
+
+Unless required by applicable law or agreed to in writing, all software and materials distributed here under the Apache 2.0, the Terms or CC-BY licenses are distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the licenses for the specific language governing permissions and limitations under those licenses.
+
+You are solely responsible for determining the appropriateness of using the software, model parameters, materials or using or distributing outputs, and assume any and all risks associated with such use or distribution and your exercise of rights and obligations under these Terms. You and anyone you share output with are solely responsible for these and their subsequent uses.
+
+Output are predictions with varying levels of confidence and should be interpreted carefully. Use discretion before relying on, publishing, downloading or otherwise using AlphaFold 3.
+
+All software, model parameters, materials and any outputs you create are for theoretical modeling only. They are not intended, validated, or approved for clinical use. You should not use the software, model parameters, materials or outputs for clinical purposes or rely on them for medical or other professional advice. Any content regarding those topics is provided for informational purposes only and is not a substitute for advice from a qualified professional.
+This is not an official Google product.
+
