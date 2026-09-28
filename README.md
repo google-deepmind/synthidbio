@@ -4,17 +4,17 @@ SynthID Bio is a family of methods developed by Google DeepMind for embedding
 highly detectable yet function-preserving watermarks directly into AI-generated
 biological sequences and structures.
 
-For more details, please refer to our paper: **"Function-preserving watermarking of AI-generated proteins"**.
+For more details, please refer to our paper: [**"Function-preserving watermarking of AI-generated proteins"**](https://www.nature.com/articles/s41586-026-10965-y).
 
 ## Overview
 
 SynthID Bio provides watermarking for autoregressive inverse folding models
 (such as ProteinMPNN) and structure prediction models (such as AlphaFold 3):
 
--   [**SynthID Bio-structure**](#synthidbio-structure): Fine-tuned AlphaFold 3
+-   [**SynthID Bio-structure**](#synthid-bio-structure): Fine-tuned AlphaFold 3
     model that embeds imperceptible watermarks into generated 3D biomolecular
     structures.
--   [**SynthID Bio-sequence**](#synthidbio-sequence): Watermarking protein
+-   [**SynthID Bio-sequence**](#synthid-bio-sequence): Watermarking protein
     sequences during autoregressive decoding with ProteinMPNN while preserving
     function and expressivity.
 
@@ -35,14 +35,6 @@ For full instructions on downloading model weights and running watermarked struc
 
 > [!NOTE]
 > **Drop-in Integration:** This watermarked version of ProteinMPNN is designed to be a drop-in replacement for existing protein design pipelines. With minimal installation overhead, it can be integrated into your current workflows, enabling the generation of watermarked protein sequences by simply enabling the watermarking flags.
-
-In-vitro validation data is available in the `synthidbio_sequence/data/` directory.
-This includes binding data CSVs and kinetics plots for each target:
-
-- `synthidbio_sequence/data/SC2RBD/` - Binding data (`sc2rbd_data.csv`) and kinetics plots (`sc2rbd_kinetics/`) for SARS-CoV-2 RBD
-- `synthidbio_sequence/data/VEGF-A/` - Binding data (`vegfa_data.csv`) and kinetics plots (`vegfa_kinetics/`) for VEGF-A
-- `synthidbio_sequence/data/PD_L1/` - Binding data (`pdl1_data.csv`) and kinetics plots (`pdl1_kinetics/`) for PD-L1
-- `synthidbio_sequence/data/all_g_values.csv` - G-values for all sequences
 
 ### Installation
 
@@ -69,43 +61,57 @@ Follow these steps to set up the environment from scratch on a Linux system:
 3. **Install SynthID Text package**:
 
     ```bash
-    cd third_party/synthid-text
-    uv pip install -e .
+    uv pip install -e third_party/synthid-text
     ```
+
+    *(Or using `pip`: `pip install -e third_party/synthid-text`)*
 
 ### Quick Start
 
-#### Generate Normal (Non-Watermarked) Sequences
+Navigate to the ProteinMPNN directory before running generation scripts:
 
 ```bash
-cd synthidbio_sequence/third_party/ProteinMPNN/examples
-bash submit_example_1.sh
+cd third_party/ProteinMPNN
 ```
 
-**Outputs stored in `synthidbio_sequence/third_party/ProteinMPNN/outputs` and includes g-values for detection**:
+#### Generate Normal (Non-Watermarked) Sequences
+
+Run Example 1 to generate baseline unwatermarked sequences and pre-parsed
+inputs:
+
+```bash
+(cd examples && bash submit_example_1.sh)
+```
+
+**Outputs are stored in `outputs/example_1_outputs/seqs/` and include baseline
+g-values (~0.5) for detection:**
 
 ```
->T=0.1, sample=1, score=0.8581, global_score=0.8581, seq_recovery=0.4151, mean_g_value=0.5255
+>T=0.1, sample=1, score=0.8581, global_score=0.8581, seq_recovery=0.4151, mean_g_value=0.5037
 SIDEDTQKALDFVKALEEANPELMKKVITPDTEMEVNGKKYKGEEIVEFVKELAAKGVK...
 ```
 
 #### Generate Watermarked Sequences
 
-It is important to note that when comparing watermarked to unwatermarked
-sequences, the watermarking args should be the same for both runs as to get
-comparative g-values. Without the `--watermark` arg, watermarking will not be
-added to the sequences but the correct g-values will still be computed so you
-can see the effect of the watermarking on detection.
+When comparing watermarked to unwatermarked sequences, the watermarking
+arguments should remain identical across runs so that comparative g-values can
+be evaluated. Without the `--watermark` flag, watermarks are not embedded into
+generated sequences, but detection g-values are still computed so you can
+measure the watermark's signal strength against the unwatermarked baseline.
 
-##### Example 1: Distortionary Watermarking (Temperature 0.1)
+> [!TIP] If you have not run `submit_example_1.sh` above, you can substitute
+> `--jsonl_path outputs/example_1_outputs/parsed_pdbs.jsonl` with the pre-parsed
+> dataset at `--jsonl_path test_data/helper_outputs/parsed_pdbs.jsonl`.
 
-For stronger watermark signal, best for low temperature generation (0.1). Uses repeated keys.
+##### Example 1: Distortionary Watermarking, Low Sampling Temperature
+
+Use repeating keys for a stronger watermark signal, best suited for
+low-temperature generation (e.g., 0.1):
 
 ```bash
-cd synthidbio_sequence/third_party/ProteinMPNN
 python protein_mpnn_run.py \
     --jsonl_path outputs/example_1_outputs/parsed_pdbs.jsonl \
-    --out_folder outputs/example_1_outputs \
+    --out_folder outputs/example_1_watermark_outputs \
     --num_seq_per_target 2 \
     --sampling_temp 0.1 \
     --seed 37 \
@@ -123,16 +129,13 @@ TIDDDTAIALKYVESLELADPALMSKVITPNTKMEYNGREFVGEEIVAYVEEVKKEGVK...
 
 ##### Example 2: Unwatermarked with Distortionary G-Values (Temperature 0.1)
 
-If you want to run an equivalent unwatermarked sequence with distortionary
-g-values, you can run the following command (the key part is removing
-`--watermark` but keeping the same watermark args so g-values are computed
-correctly on unwatermarked sequences.):
+To run an equivalent unwatermarked sequence with distortionary g-values, remove
+`--watermark` while keeping the same watermarking arguments:
 
 ```bash
-cd synthidbio_sequence/third_party/ProteinMPNN
 python protein_mpnn_run.py \
     --jsonl_path outputs/example_1_outputs/parsed_pdbs.jsonl \
-    --out_folder outputs/example_1_outputs \
+    --out_folder outputs/example_1_unwatermarked_outputs \
     --num_seq_per_target 2 \
     --sampling_temp 0.1 \
     --seed 37 \
@@ -141,16 +144,15 @@ python protein_mpnn_run.py \
     --watermark_keys 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 ```
 
-##### Example 3: Non-Distortionary Watermarking (Temperature 0.5)
+##### Example 3: Non-Distortionary Watermarking, Medium Sampling Temperature
 
-Minimal impact on sequence quality. Uses non-repeated keys and higher
-temperature.
+Use non-repeating keys for minimal impact on sequence quality at
+medium-to-higher sampling temperatures (e.g., 0.5):
 
 ```bash
-cd synthidbio_sequence/third_party/ProteinMPNN
 python protein_mpnn_run.py \
     --jsonl_path outputs/example_1_outputs/parsed_pdbs.jsonl \
-    --out_folder outputs/example_1_outputs \
+    --out_folder outputs/example_3_watermark_outputs \
     --num_seq_per_target 2 \
     --sampling_temp 0.5 \
     --seed 37 \
@@ -168,16 +170,13 @@ SVDPDTKRAHDFVDALELADPALMREVITPDTQMEYNGQRFVGEEIVEFVKQIAAEGR...
 
 ##### Example 4: Unwatermarked with Non-Distortionary G-Values (Temperature 0.5)
 
-Similarly, if you want to run an equivalent unwatermarked sequence with
-non-distortionary g-values, you can run the following command (the key part is
-removing `--watermark` but keeping the same watermark args so g-values are
-computed correctly on unwatermarked sequences.):
+Similarly, to run an equivalent unwatermarked sequence with non-distortionary
+g-values, remove `--watermark` while keeping the same watermarking arguments:
 
 ```bash
-cd synthidbio_sequence/third_party/ProteinMPNN
 python protein_mpnn_run.py \
     --jsonl_path outputs/example_1_outputs/parsed_pdbs.jsonl \
-    --out_folder outputs/example_1_outputs \
+    --out_folder outputs/example_3_unwatermarked_outputs \
     --num_seq_per_target 2 \
     --sampling_temp 0.5 \
     --seed 37 \
@@ -192,7 +191,6 @@ For existing FASTA files, use the standalone `compute_g_values.py` script to
 compute g-values without regenerating sequences:
 
 ```bash
-cd synthidbio_sequence/third_party/ProteinMPNN
 python compute_g_values.py \
     --input_fasta test_data/test_sequences.fa \
     --output_fasta outputs/sequences_with_gvalues.fa \
@@ -221,16 +219,15 @@ KLYEYKKIGDEYVVNIYDNTEIVKSILEFCEEKNILSGTIQGIGQIKEIELQFFDPETKE...
 
 ### Watermarking Parameters
 
-| Parameter | Description | Default | Notes |
-|-----------|-------------|---------|-------|
-| `--watermark` | Enable watermarking | True | Must be set to embed watermarks |
-| `--ngram_len` | N-gram length | 4 | Higher = stronger watermark (e.g., 25) |
-| `--watermark_keys` | Comma-separated keys | 0,1,2,3,4,...,24 | Length must match ngram_len |
-| `--context_history_size` | Context size | 1024 | SynthID internal parameter |
-| `--watermark_temperature` | Watermark temp | 1.0 | Controls watermark strength |
-| `--watermark_top_k` | Top-k value | 21 | Set to vocab size (21 amino acids) |
-| `--skip_first_ngram_calls` | Skip first tokens | True | SynthID internal parameter |
-| `--num_leaves` | Tournament leaves | 2 | SynthID internal parameter |
+Parameter                  | Description          | Default      | Notes
+-------------------------- | -------------------- | ------------ | -----
+`--watermark`              | Enable watermarking  | False        | Must be set to embed watermarks
+`--ngram_len`              | N-gram length        | 4            | Context window conditioning watermark (e.g., 2, 4)
+`--watermark_keys`         | Comma-separated keys | 0,1,2,...,24 | Sequence of integer keys, one per depth/tournament layer
+`--context_history_size`   | Context size         | 1024         | SynthID internal buffer size to track seen contexts
+`--watermark_temperature`  | Watermark temp       | 1.0          | Temperature scaling factor for watermark distortion strength
+`--watermark_top_k`        | Top-k value          | 21           | Set to vocab size (21 amino acids + mask token)
+`--skip_first_ngram_calls` | Skip first tokens    | True         | Disables watermarking for first (ngram_len - 1) tokens
 
 ### Applying SynthID Bio-sequence to Other Decoders
 
@@ -242,8 +239,10 @@ other autoregressive protein sequence decoders with minimal changes.
 To apply watermarking to a custom protein decoder, follow these steps:
 
 1. **Initialize the Processor**: Create an instance of `SynthIDLogitsProcessor` from `synthid_text.logits_processing`.
-   * For protein sequences, it is recommended to set `apply_top_k=False` to maintain the full amino acid alphabet, and set `top_k` to the vocabulary size (typically 21 for standard amino acids + mask token).
-   * Ensure the `device` matches the model's device.
+    *   For protein sequences, set `apply_top_k=False` to maintain the full
+        amino acid alphabet, and set `top_k` to the vocabulary size (typically
+        21 for standard amino acids + mask token).
+    * Ensure the `device` matches the model's device.
 
 2.  **Enforce Sequential Decoding**: SynthID Bio-sequence requires sequential
     (left-to-right) decoding because the watermark at position *t* depends on
@@ -265,15 +264,19 @@ autoregressive decoding loop:
 from synthid_text.logits_processing import SynthIDLogitsProcessor
 import torch
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 # 1. Initialize the processor
 watermark_processor = SynthIDLogitsProcessor(
     ngram_len=4,
-    # Watermark keys (one per depth)
-    keys=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-          19, 20, 21, 22, 23, 24],
+    # Watermark keys (one per depth layer)
+    keys=[
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+        19, 20, 21, 22, 23, 24,
+    ],
     context_history_size=1024,
     temperature=1.0,
-    top_k=21,  # Vocabulary size (e.g., 20 amino acids + X)
+    top_k=21,  # Vocabulary size (e.g., 20 amino acids + mask token)
     device=device,
     apply_top_k=False,  # Keep full alphabet for protein design
 )
@@ -286,8 +289,10 @@ for t in range(sequence_length):
   # Get raw logits from your model
   logits = model.get_logits(..., generated_tokens)  # [batch_size, vocab_size]
 
-  # Convert context to tensor
-  input_ids = torch.tensor(generated_tokens, device=device).unsqueeze(0)  # [1, t]
+  # Convert context to int64 tensor
+  input_ids = torch.tensor(
+      generated_tokens, dtype=torch.long, device=device
+  ).unsqueeze(0)  # [1, t]
 
   # Get watermarked scores (log probabilities) and top_k indices
   watermarked_scores, top_k_indices, _ = watermark_processor.watermarked_call(
@@ -311,14 +316,15 @@ watermarking works correctly.
 
 #### Test Suite Overview
 
-*   **`test_example_*.py`**: Verifies backward compatibility with standard
-    ProteinMPNN (ensures deterministic non-watermarked generation matches
-    golden outputs).
-*   **`test_example_*_watermark.py`**: Tests end-to-end watermarked
-    generation, validating sequences, scores, recovery rates, and exact
-    g-values.
+*   **`test_example_1.py`**: Verifies deterministic non-watermarked and
+    watermarked generation (validating sequences, scores, recovery rates, and
+    exact g-values).
+*   **`test_example_*_watermark.py`**: Tests end-to-end watermarked generation
+    across examples 2–8.
 *   **`test_g_values.py`**: Tests g-value detection accuracy for both
     watermarked and non-watermarked sequences.
+*   **`test_compute_g_values.py`**: Tests the standalone FASTA g-value
+    calculator.
 
 #### Running Tests
 
@@ -327,23 +333,24 @@ To run the tests, navigate to the `synthidbio_sequence/third_party/ProteinMPNN` 
 ```bash
 cd synthidbio_sequence/third_party/ProteinMPNN
 
+# Run core tests
+pytest test_example_1.py test_g_values.py -v
+
+# Run the standalone calculator test
+pytest test_compute_g_values.py -v
+
 # Run all tests
 pytest -v
-
-# Run a specific test file
-pytest test_example_1.py -v
-pytest test_example_1_watermark.py -v
-pytest test_g_values.py -v
 ```
 
 #### Expected Test Output
 
 ```
 ==================== test session starts ====================
-test_example_1.py::test_submit_example_1 PASSED           [ 25%]
-test_example_1_watermark.py::test_watermark_... PASSED    [ 50%]
-test_g_values.py::test_g_values_non_watermarked PASSED    [ 75%]
-test_g_values.py::test_g_values_watermarked PASSED        [100%]
+test_example_1.py::test_example_1_non_watermarked PASSED   [ 25%]
+test_example_1.py::test_example_1_watermarked PASSED       [ 50%]
+test_g_values.py::test_g_values_non_watermarked PASSED     [ 75%]
+test_g_values.py::test_g_values_watermarked PASSED         [100%]
 
 ==================== 4 passed in 45.23s =====================
 ```
@@ -362,10 +369,10 @@ test_g_values.py::test_g_values_watermarked PASSED        [100%]
    - G-value computation for detection
    - Tournament-based token selection
 
-3. **Detector** (integrated in `protein_mpnn_run.py`)
-   - Always-on g-value computation
-   - Uses same SynthID processor for detection
-   - Independent of watermarking mode
+3.  **Detector** (integrated in `protein_mpnn_run.py` and `compute_g_values.py`)
+    - Always-on g-value computation
+    - Uses same SynthID processor for detection
+    - Independent of watermarking mode
 
 ### Contained Code
 
@@ -379,40 +386,71 @@ test_g_values.py::test_g_values_watermarked PASSED        [100%]
 
 ### Modified, Added, and Removed Files in third_party/ProteinMPNN
 
-To integrate SynthID watermarking and ensure determinism, the following files in the `synthidbio_sequence/third_party/ProteinMPNN` directory were modified, added, or removed:
+To integrate SynthID watermarking and ensure determinism, the following files in
+the `synthidbio_sequence/third_party/ProteinMPNN` directory were modified,
+added, or removed:
 
 #### Modified Files
 
 *   **`synthidbio_sequence/third_party/ProteinMPNN/protein_mpnn_run.py`**:
-    *   Added command-line arguments to configure SynthID watermarking (e.g., `--watermark`, `--ngram_len`, `--watermark_keys`, `--num_leaves`).
+    *   Added command-line arguments to configure SynthID watermarking (e.g.,
+        `--watermark`, `--ngram_len`, `--watermark_keys`, `--num_leaves`).
     *   Imports `SynthIDLogitsProcessor` and `mean_score` from `synthid_text`.
-    *   Initializes the `SynthIDLogitsProcessor` and passes it to the model's `sample` function.
+    *   Initializes the `SynthIDLogitsProcessor` and passes it to the model's
+        `sample` function.
     *   Enforces `batch_size=1` when watermarking is active.
-    *   Computes g-values for all generated sequences and appends the `mean_g_value` to the output FASTA headers.
+    *   Computes g-values for all generated sequences and appends the
+        `mean_g_value` to the output FASTA headers.
 *   **`synthidbio_sequence/third_party/ProteinMPNN/protein_mpnn_utils.py`**:
-    *   Modified the `sample` method of `ProteinMPNN` class to accept `watermark_processor`.
-    *   Forces left-to-right sequential decoding when `watermark_processor` is present, overriding the default random decoding order.
-    *   Enforces `batch_size=1` check inside `sample` when `watermark_processor` is present.
-    *   Intercepts logits at each step of the decoding loop and applies `watermark_processor.watermarked_call` to compute watermarked scores before sampling.
-    *   Modified `tied_sample` signature to accept `watermark_processor` for compatibility.
+    *   Modified the `sample` method of `ProteinMPNN` class to accept
+        `watermark_processor`.
+    *   Forces left-to-right sequential decoding when `watermark_processor` is
+        present, overriding the default random decoding order.
+    *   Enforces `batch_size=1` check inside `sample` when `watermark_processor`
+        is present.
+    *   Intercepts logits at each step of the decoding loop and applies
+        `watermark_processor.watermarked_call` to compute watermarked scores
+        before sampling.
+    *   Modified `tied_sample` signature to accept `watermark_processor` for
+        compatibility.
 *   **`synthidbio_sequence/third_party/ProteinMPNN/helper_scripts/parse_multiple_chains.py`**:
-    *   Sorted the output of `glob.glob` to ensure deterministic parsing order of PDB files for testing.
+    *   Sorted the output of `glob.glob` to ensure deterministic parsing order
+        of PDB files for testing.
 
 #### Added Files
 
 *   **`synthidbio_sequence/third_party/ProteinMPNN/compute_g_values.py`**:
-    *   Standalone script to compute g-values for existing sequences in FASTA format, using `SynthIDLogitsProcessor` for detection.
+    *   Standalone script to compute g-values for existing sequences in FASTA
+        format, using `SynthIDLogitsProcessor` for detection.
 *   **`synthidbio_sequence/third_party/ProteinMPNN/test_*.py`**:
-    *   Pytest suite (10 files) for validating various ProteinMPNN examples with and without watermarking, ensuring exact score and g-value matches.
+    *   Pytest suite (10 files) for validating various ProteinMPNN examples with
+        and without watermarking, ensuring exact score and g-value matches.
 *   **`synthidbio_sequence/third_party/ProteinMPNN/test_data/`**:
-    *   Directory containing golden outputs and helper inputs used by the test suite to ensure determinism.
+    *   Directory containing golden outputs and helper inputs used by the test
+        suite to ensure determinism.
 *   **`synthidbio_sequence/third_party/ProteinMPNN/examples/*_watermark.sh`**:
-    *   Example bash scripts (for examples 2, 3, 4, 5, 6, 8) demonstrating how to run ProteinMPNN with watermarking parameters.
+    *   Example bash scripts (for examples 2, 3, 4, 5, 6, 8) demonstrating how
+        to run ProteinMPNN with watermarking parameters.
 
 #### Removed Files & Directories
 
 *   **`synthidbio_sequence/third_party/ProteinMPNN/training/`**:
-    *   Removed training code, data, and local training weights, as they are not required for inference or validation.
+    *   Removed training code, data, and local training weights, as they are not
+        required for inference or validation.
+
+### Publication Data
+
+Derived g-values and *in vitro* validation data supporting the publication are
+available in the `synthidbio_sequence/data/` directory. This includes binding
+data CSVs and kinetics plots for each target:
+
+-   `synthidbio_sequence/data/all_g_values.csv` - G-values for all sequences
+-   `synthidbio_sequence/data/SC2RBD/` - Binding data (`sc2rbd_data.csv`) and
+    kinetics plots (`sc2rbd_kinetics/`) for SARS-CoV-2 RBD
+-   `synthidbio_sequence/data/VEGF-A/` - Binding data (`vegfa_data.csv`) and
+    kinetics plots (`vegfa_kinetics/`) for VEGF-A
+-   `synthidbio_sequence/data/PD_L1/` - Binding data (`pdl1_data.csv`) and
+    kinetics plots (`pdl1_kinetics/`) for PD-L1
 
 
 
