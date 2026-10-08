@@ -445,12 +445,69 @@ available in the `synthidbio_sequence/data/` directory. This includes binding
 data CSVs and kinetics plots for each target:
 
 -   `synthidbio_sequence/data/all_g_values.csv` - G-values for all sequences
+-   `synthidbio_sequence/data/cifs/` - Predicted structure `.cif` files storing
+    per-residue g-values in the B-factor column (`_atom_site.B_iso_or_equiv`)
+    and watermarking masks in the occupancy column (`_atom_site.occupancy`)
 -   `synthidbio_sequence/data/SC2RBD/` - Binding data (`sc2rbd_data.csv`) and
     kinetics plots (`sc2rbd_kinetics/`) for SARS-CoV-2 RBD
 -   `synthidbio_sequence/data/VEGF-A/` - Binding data (`vegfa_data.csv`) and
     kinetics plots (`vegfa_kinetics/`) for VEGF-A
 -   `synthidbio_sequence/data/PD_L1/` - Binding data (`pdl1_data.csv`) and
     kinetics plots (`pdl1_kinetics/`) for PD-L1
+
+#### Computing Mean G-Values from CIF Files
+
+Each `.cif` file in `synthidbio_sequence/data/cifs/` stores the per-residue
+watermarking g-values in the isotropic B-factor field
+(`_atom_site.B_iso_or_equiv`) and the watermarked-position mask (`1.0` for
+watermarked residues, `0.0` for fixed/context residues) in the occupancy field
+(`_atom_site.occupancy`) of the binder chain.
+
+You can compute the mean g-value for any CIF file using Biopython's
+`MMCIF2Dict` and `mean_score` from `synthid_text.detector_mean`:
+
+```python
+from typing import Optional
+from Bio.PDB.MMCIF2Dict import MMCIF2Dict
+import jax.numpy as jnp
+import numpy as np
+from synthid_text.detector_mean import mean_score
+
+
+def compute_cif_mean_g_value(
+    cif_path: str, binder_chain_id: Optional[str] = None
+) -> float:
+  cif_dict = MMCIF2Dict(cif_path)
+
+  chain_ids = np.asarray(cif_dict["_atom_site.label_asym_id"])
+  res_ids = np.asarray(cif_dict["_atom_site.label_seq_id"], dtype=int)
+  b_factors = np.asarray(cif_dict["_atom_site.B_iso_or_equiv"], dtype=np.float32)
+  occupancies = np.asarray(cif_dict["_atom_site.occupancy"], dtype=np.float32)
+
+  # Target is chain A (or A, B for VEGF-A homodimer); binder is the last chain.
+  if binder_chain_id is None:
+    binder_chain_id = sorted(set(chain_ids))[-1]
+
+  binder_mask = chain_ids == binder_chain_id
+  atom_bfactors = b_factors[binder_mask]
+  atom_occupancies = occupancies[binder_mask]
+  atom_res_ids = res_ids[binder_mask]
+
+  # Group by unique residue ID (multi-atom residues share identical values)
+  _, unique_idx = np.unique(atom_res_ids, return_index=True)
+  unique_res_bfactors = atom_bfactors[unique_idx]
+  unique_res_occupancies = atom_occupancies[unique_idx]
+
+  # Reshape for mean_score:
+  # g_values: [batch_size=1, seq_len, watermarking_depth=1]
+  # mask: [batch_size=1, seq_len]
+  g_values = jnp.asarray(unique_res_bfactors)[None, :, None]
+  mask = jnp.asarray(unique_res_occupancies)[None, :]
+
+  return float(mean_score(g_values, mask)[0])
+```
+
+*Note:* Sequences ordered for DNA synthesis differ slightly from the generated binder sequences. Specifically, the N-terminal MET was omitted from the synthetic DNA sequences in order to allow for standard cloning, vector integration, and purification tags.
 
 
 
@@ -488,6 +545,8 @@ The ProteinMPNN model parameters were originally made available at https://githu
 The AlphaFold 3 model parameters are made available under the AlphaFold 3 Model Parameters Terms of Use (the "Terms"); you may not use these except in compliance with the Terms. You may obtain a copy of the Terms at https://github.com/google-deepmind/alphafold3/blob/main/WEIGHTS_TERMS_OF_USE.md and in the file WEIGHTS_TERM_USE.
 
 Data in the synthidbio_squence/data directory is licensed under the Creative Commons Attribution 4.0 International License (CC-BY). You may obtain a copy of the CC-BY license at: https://creativecommons.org/licenses/by/4.0/legalcode
+
+With the exception of `atom_site.B_iso_or_equiv` and `_atom_site.occupancy` fields inside synthidbio_squence/data/cifs (which are derived from synthid-text directory and licensed under the CC-BY license), all other data in synthidbio_squence/data/cifs are made available under the AlphaFold 3 Outputs Terms of Use (the “Output Terms”), you may not use any output except in compliance with the Output Terms. You may obtain a copy of the Output Terms at https://github.com/google-deepmind/alphafold3/blob/main/OUTPUT_TERMS_OF_USE.md.
 
 Unless required by applicable law or agreed to in writing, all software and materials distributed here under the Apache 2.0, the Terms or CC-BY licenses are distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the licenses for the specific language governing permissions and limitations under those licenses.
 
