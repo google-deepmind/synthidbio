@@ -31,13 +31,19 @@ def parse_fasta(fasta_path):
             if not line:
                 continue
             if line.startswith(">"):
-                if current_seq:
+                if headers:
+                    if not current_seq:
+                        raise ValueError(f"FASTA record {headers[-1]} has no sequence")
                     sequences.append("".join(current_seq))
                     current_seq = []
                 headers.append(line)
             else:
+                if not headers:
+                    raise ValueError("Sequence data before the first FASTA header")
                 current_seq.append(line)
-        if current_seq:
+        if headers:
+            if not current_seq:
+                raise ValueError(f"FASTA record {headers[-1]} has no sequence")
             sequences.append("".join(current_seq))
     return headers, sequences
 
